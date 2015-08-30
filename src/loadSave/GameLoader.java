@@ -5,10 +5,14 @@ import java.io.IOException;
 import npuzzle.core.PlayingField;
 
 public interface GameLoader {
-	
-	/**Load field game.*/
+
+	/**
+	 * Load playing field.
+	 * 
+	 * @return playing field.
+	 */
 	PlayingField load() throws IOException;
 
-	/**Save field game.*/
+	/** Save playing field. */
 	void store(PlayingField field);
 }

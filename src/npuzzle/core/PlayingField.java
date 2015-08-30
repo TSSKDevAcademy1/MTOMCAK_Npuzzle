@@ -3,15 +3,15 @@ package npuzzle.core;
 import java.io.Serializable;
 import java.util.Random;
 
+/**
+ * Represent playing fields consist of cells.
+ */
 public class PlayingField implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Playing field cells.
+	 * Playing field - cells.
 	 */
 	private final Cell[][] playingField;
 
@@ -30,6 +30,9 @@ public class PlayingField implements Serializable {
 	 */
 	private final int numberOfCell;
 
+	/** Empty position */
+	public EmptyPosition emptyPos = new EmptyPosition();
+
 	/**
 	 * Constructor.
 	 *
@@ -43,12 +46,13 @@ public class PlayingField implements Serializable {
 		this.columnCount = columnCount;
 		numberOfCell = rowCount * columnCount;
 		playingField = new Cell[rowCount][columnCount];
-		// generate the field content
+
+		// field generate
 		generate();
 	}
 
 	/**
-	 * Generates playing field.
+	 * Generates playing field with random generator.
 	 */
 	private void generate() {
 		Random cellValue = new Random();
@@ -60,6 +64,11 @@ public class PlayingField implements Serializable {
 						ranValue = cellValue.nextInt(numberOfCell);
 						if (!ifExistValue(ranValue)) {
 							playingField[r][c] = new Cell(ranValue);
+
+							if (ranValue == 0) {
+								emptyPos.setX(r);
+								emptyPos.setY(c);
+							}
 						}
 					} while (!(getCell(r, c) instanceof Cell));
 				}
@@ -86,82 +95,40 @@ public class PlayingField implements Serializable {
 	/**
 	 * Returns true if game is solved, false otherwise.
 	 *
-	 * @return true if game is solved, false otherwise
+	 * @return true if game is solved, false otherwise.
 	 */
 	public boolean isSolved() {
 		int check = 1;
-		for (int r = 0; r < rowCount; r++) {
-			for (int c = 0; c < columnCount; c++) {
-				if (getCell(r, c).getValue() == check) {
-					check++;
+
+		if (getCell(rowCount - 1, columnCount - 1).getValue() != 0)
+			return false;
+		else {
+			for (int r = 0; r < rowCount; r++) {
+				for (int c = 0; c < columnCount; c++) {
+					// check sort cells ascending
+					if (r != rowCount && c != columnCount) {
+						if (getCell(r, c).getValue() == check) {
+							check++;
+						}
+					}
 				}
 			}
 		}
-		return numberOfCell == check;
+		System.out.println(check == numberOfCell);
+		return check == numberOfCell;
 	}
 
 	/**
-	 * Returns position of empty cell.
-	 *
-	 * @return column and row of empty cell.
+	 * Move with empty cell in specified direction.
 	 */
-	public String getPosOfEmptyCell() {
-		String position = null;
-		for (int r = 0; r < rowCount; r++) {
-			for (int c = 0; c < columnCount; c++) {
-				if (getCell(r, c).getValue() == 0) {
-					position = r + " " + c;
-				}
-			}
-		}
-		return position;
-	}
-
-	/**
-	 * Move left with cell right of empty cell.
-	 */
-	public void moveLeft(int row, int col) {
-		Cell cell;
-		if (col < columnCount) {
-			cell = playingField[row][col];
-			playingField[row][col] = playingField[row][col + 1];
-			playingField[row][col + 1] = cell;
-		}
-	}
-	
-	/**
-	 * Move right with empty cell.
-	 */
-	public void moveRight(int row, int col) {
-		Cell cell;
-		if (col > 0) {
-			cell = playingField[row][col];
-			playingField[row][col] = playingField[row][col - 1];
-			playingField[row][col - 1] = cell;
-		}
-	}
-	
-	/**
-	 * Move up with with empty cell.
-	 */
-	public void moveUp(int row, int col) {
-		Cell cell;
-		if (row > 0) {
-			cell = playingField[row][col];
-			playingField[row][col] = playingField[row - 1][col];
-			playingField[row - 1][col] = cell;
-		}
-	}
-	
-	/**
-	 * Move down with empty cell.
-	 */
-	public void moveDown(int row, int col) {
-		Cell cell;
-		if (row < rowCount) {
-			cell = playingField[row][col];
-			playingField[row][col] = playingField[row + 1][col];
-			playingField[row + 1][col] = cell;
+	public void Move(int r, int c) {
+		int row = emptyPos.getX();
+		int col = emptyPos.getY();
+		if (col > 0 && col < columnCount || row >= 0 && row < rowCount) {
+			playingField[row][col] = playingField[row + r][col + c];
+			playingField[row + r][col + c] = new Cell(0);
+			emptyPos.setX(row + r);
+			emptyPos.setY(col + c);
 		}
 	}
 

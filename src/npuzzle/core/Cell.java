@@ -2,17 +2,16 @@ package npuzzle.core;
 
 import java.io.Serializable;
 
+/**
+ * Cell represent integer value.
+ * 
+ */
+
 public class Cell implements Serializable {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 	/** Value of the cell. */
 	private final int value;
-
-	public Cell(int value) {
-		this.value = value;
-	}
 
 	/**
 	 * Constructor.
@@ -20,9 +19,16 @@ public class Cell implements Serializable {
 	 * @param value
 	 *            value of the cell
 	 */
+	public Cell(int value) {
+		this.value = value;
+	}
+
+	/**
+	 * @return the value
+	 */
 	public int getValue() {
 		return value;
-	};
+	}
 
 	@Override
 	public String toString() {
@@ -31,5 +37,4 @@ public class Cell implements Serializable {
 		}
 		return getValue() + "";
 	}
-
 }

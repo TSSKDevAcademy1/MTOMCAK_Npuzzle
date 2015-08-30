@@ -1,24 +1,31 @@
 package npuzzle.consoleui;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Formatter;
 import java.util.Locale;
 
 import loadSave.FileGameLoader;
-import loadSave.GameLoader;
+import loadSave.PlayerTimeLoader;
 import npuzzle.Npuzzle;
+import npuzzle.core.BestTimes.PlayerTime;
 import npuzzle.core.PlayingField;
 
+/**
+ * Console UI - game console with read input, update field and check game state.
+ */
 public class ConsoleUI {
 	/** Playing field represent game and logic */
 	private PlayingField field;
-
+	/** File game loader - save and load game from/to file. */
 	private FileGameLoader fileGame = new FileGameLoader();
 	/** Input reader. */
 	private BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-
+	/** Player time loader */
+	private PlayerTimeLoader playertimeLoad = new PlayerTimeLoader();
+	private String userName = System.getProperty("user.name");
 	/**
 	 * Reads line of text from the reader.
 	 * 
@@ -32,31 +39,32 @@ public class ConsoleUI {
 		}
 	}
 
+	/**
+	 * New game started. Load game from file or database if exist otherwise
+	 * generate new playing field.
+	 */
 	public void newGameStarted() {
-
 		try {
+			System.out.println(playertimeLoad.load());
 			field = fileGame.load();
-			System.out.printf("\tWelcome player " + System.getProperty("user.name") + "!\n\n");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println("nejde");
+		} catch (FileNotFoundException e) {
+			System.out.println("File not found ! \n Generate playing field !");
 			field = new PlayingField(5, 5);
 		}
 
-		// System.out.printf("\tWelcome player
-		// "+System.getProperty("user.name")+"!\n\n");
+		System.out.printf("\tWelcome player " + userName + "!\n\n");
+
 		do {
 			update();
 			processInput();
 			// check if player win
 			if (field.isSolved()) {
 				System.out.println("Congratulations You won !!!");
+				playertimeLoad.store(new PlayerTime(userName, Npuzzle.getInstance().getPlayingSeconds()));
 				update();
 				System.exit(0);
 			}
-
 		} while (true);
-
 	}
 
 	/**
@@ -64,45 +72,39 @@ public class ConsoleUI {
 	 * playing field according to input string.
 	 */
 	private void processInput() {
-		field = new PlayingField(4, 4);
 		try {
-			handleInput(readLine().toUpperCase());
+			handleInput(readLine().toLowerCase());
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
 	}
 
 	private void handleInput(String input) throws WrongFormatException, IOException {
-		int col = 0, row = 0;
-		// get lower case
-		input = input.toLowerCase();
-		// filter insert command
-		inputFilter(input);
-
+		// check if insert is exit or new game.
 		if (input.equals("exit")) {
 			fileGame.store(field);
+			playertimeLoad.store(new PlayerTime(userName, Npuzzle.getInstance().getPlayingSeconds()));
 			System.exit(0);
 		} else if (input.equals("new")) {
 			newGameStarted();
 		}
-		// get position of empty cell in playing field
-		String position = field.getPosOfEmptyCell();
-		// convert position to integer value
-		row = Integer.parseInt(position.substring(0, position.indexOf(" ")));
-		col = Integer.parseInt(position.substring(position.indexOf(" ") + 1, position.length()));
 
 		switch (input) {
 		case "w":
-			field.moveUp(row, col);
+		case "up":
+			field.Move(-1, 0);
 			break;
 		case "s":
-			field.moveDown(row, col);
+		case "down":
+			field.Move(1, 0);
 			break;
 		case "a":
-			field.moveRight(row, col);
+		case "left":
+			field.Move(0, -1);
 			break;
 		case "d":
-			field.moveLeft(row, col);
+		case "right":
+			field.Move(0, 1);
 			break;
 		default:
 			throw new WrongFormatException("Wrong command insert: " + input + "!");
@@ -110,38 +112,24 @@ public class ConsoleUI {
 	}
 
 	/**
-	 * Filter inserted input string.
-	 */
-	private String inputFilter(String input) {
-		if (input.equals("up"))
-			input = "w";
-		if (input.equals("down"))
-			input = "s";
-		if (input.equals("left"))
-			input = "a";
-		if (input.equals("right"))
-			input = "d";
-		return input;
-	}
-
-	/**
 	 * Refresh playing field. Check value of cell and print on console.
 	 */
 	public void update() {
-		// Create formatter for StringBuilder
 		StringBuilder sb = new StringBuilder();
 		Formatter formatter = new Formatter(sb, Locale.US);
 
-		// System.out.println(Npuzzle.getInstance().getPlayingSeconds());
-		formatter.format("Playing time: %d s\n ", Npuzzle.getInstance().getPlayingSeconds());
+		// Playing time
+		long playingTime = Npuzzle.getInstance().getPlayingSeconds();
+		formatter.format("Playing time: %2d:%2d \n ", playingTime / 60, playingTime % 60);
 
-		// Print field using format
+		// Print field using formatter
 		for (int r = 0; r < field.getRowCount(); r++) {
 			for (int c = 0; c < field.getColumnCount(); c++) {
 				formatter.format("\t%s ", field.getCell(r, c).toString());
 			}
 			formatter.format("\n\n");
 		}
+		// information panel
 		formatter.format("Please enter your selection new, exit, w (up), s (down), a (left), d(right): ");
 		formatter.close();
 		System.out.println(sb);
